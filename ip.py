@@ -1,6 +1,7 @@
 import requests
 from time import sleep
 from bs4 import BeautifulSoup
+import ipaddress
 
 ############## USAGE #################
 # from ip import ipLookup
@@ -30,16 +31,21 @@ def ipLookup(ip):
         "coordinates_of_city": "",
         "domain_name": ""
     }
-    if type(ip) != str or ip == "":
-        print("Please provide a valid IP value.")
-    data = {
-      'ip': ip
-    }
     try:
-        response = requests.post('https://www.ipinfodb.com/', data=data, headers = headers)
-    except requests.exceptions.RequestException:
+        ipaddress.ip_address(ip)
+    except Exception as e:
+        print(e)
+        return result
+    data = {"ip": ip}
+    try:
+        response = requests.post('https://www.ipinfodb.com/', data = data, headers = headers)
+    except requests.exceptions.RequestException as e:
+        print("Request error ", e)
         return result
     soup = BeautifulSoup(response.text, "html.parser")
+    if soup.find("strong", text = f"IP Address Information - {ip}") is None:
+        print("Could not find information about this IP.")
+        return result
     for i in ["Country", "Region", "City", "ISP", "Coordinates of City", "Domain Name"]:
         a = soup.find("strong", text = i)
         if a:
